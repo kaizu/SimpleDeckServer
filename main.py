@@ -24,13 +24,14 @@ class Item(BaseModel):
 
 @app.put("/put_item/{spot_name}/")
 def put_item(spot_name: str, item: Item):
+    print("put_item", spot_name, item)
     try:
         manager.put_item(spot_name, item.model_dump())
         return {"status": "ok"}
     except OperationError as e:
         raise HTTPException(status_code = e.code)
 
-@app.delete("/spot/{spot_name}")
+@app.delete("/delete/{spot_name}")
 def trash_item(spot_name: str):
     try:
         ret = manager.trash_item(spot_name)
@@ -39,7 +40,7 @@ def trash_item(spot_name: str):
         else:
             raise HTTPException(status_code=404, detail = str(f"No item in {spot_name}"))
     except SpotNotFoundError as e:
-        raise HTTPException()
+        raise HTTPException(status_code = 404, detail = str(f"Spot {spot_name} not found"))
 
 @app.get("/state")
 def get_state():
