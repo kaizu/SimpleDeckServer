@@ -56,6 +56,38 @@ class DeckManager:
         self.deck_status[to_spot_name] = transfer_obj
         return True
 
+class ConsumablesManager:
+    def __init__(self):
+        self.consumables = {}
+
+    def new_item(self, item_type: str, amount: int = 0):
+        if item_type in self.consumables:
+            raise OperationError(409, "Item already exists.")
+        if amount < 0:
+            raise OperationError(400, "Invalid number of amount")
+        self.consumables[item_type] = {"amount": amount}
+        return True
+
+    def refill_item(self, item_type: str, amount: int):
+        if not item_type in self.consumables:
+            raise OperationError(404, "Item has not been registered.")
+        if amount < 0:
+            raise OperationError(400, "Invalid number of amount")
+        self.consumables[item_type]["amount"] += amount
+        return True
+        
+    def consume_item(self, item_type: str, amount: int):
+        if not item_type in self.consumables:
+            raise OperationError(404, "Item has not been registered.")
+        if not amount < self.consumables[item_type]["amount"]:
+            #XXX
+            raise OperationError(400, "{} Not enough".format(item_type)) 
+        self.consumables[item_type]["amount"] -= amount
+    
+    def status(self):
+        ret = {item_type: value["amount"] for item_type, value in self.consumables.items()}
+        return ret
+
 
 if __name__ == '__main__':
     print("== Set up Deck: A-H spots")
@@ -80,3 +112,32 @@ if __name__ == '__main__':
     except OperationError as e:
         print(e.reason)
     print(manager.get_all_spot_status())
+
+    print("****************************************")
+    print("== Set up Consumables Manager")
+    consumable_manager = ConsumablesManager()
+    print(consumable_manager.status())
+
+    print("== Set up water")
+    consumable_manager.new_item("Water", 100)
+    print(consumable_manager.status())
+
+    print("== Set up 1 ml tip")
+    consumable_manager.new_item("1ml Tip", 1000)
+    print(consumable_manager.status())
+
+    print("== Refill 10 ml of water")
+    consumable_manager.refill_item("Water", 10)
+    print(consumable_manager.status())
+
+    print("== Use 40 ml of water")
+    consumable_manager.consume_item("Water", 40)
+    print(consumable_manager.status())
+
+    print("== Use 80 ml of water")
+    try:
+        consumable_manager.consume_item("Water", 80)
+    except OperationError as e:
+        print(e.reason)
+    print(consumable_manager.status())
+

@@ -1,10 +1,11 @@
-from manager import DeckManager, SpotNotFoundError, OperationError
+from manager import DeckManager, SpotNotFoundError, OperationError, ConsumablesManager
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import uuid
 
 app = FastAPI()
 manager = DeckManager(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'])
+consumables_manager = ConsumablesManager()
 
 class MoveRequest(BaseModel):
     from_spot: str
@@ -45,3 +46,38 @@ def trash_item(spot_name: str):
 @app.get("/state")
 def get_state():
     return manager.get_all_spot_status()
+
+class ConsumableItem(BaseModel):
+    item_type: str
+    amount: int = 0
+
+@app.post("/new_consumable")
+def new_consumable(item: ConsumableItem):
+    try:
+        consumables_manager.new_item(item.item_type, item.amount)
+    except OperationError as e:
+        if e.code == 409 or e.code == 400:
+            raise HTTPException(e.code, e.reason)
+    return True
+
+@app.patch("/refill/")
+def refill_consumable(item: ConsumableItem):
+    try:
+        consumables_manager.refill_item(item.item_type, item.amount)
+    except OperationError as e:
+        if e.code == 404 or e.code == 400:
+            raise HTTPException(e.code, e.reason)
+    return True
+
+@app.patch("/use/")
+def use_consumable(item: ConsumableItem):
+    try:
+        consumables_manager.consume_item(item.item_type, item.amount)
+    except OperationError as e:
+        if e.code == 404 or e.code == 400:
+            raise HTTPException(e.code, e.reason)
+    return True
+
+@app.get("/consumables_state")
+def get_consumables_state():
+    return consumables_manager.status()
