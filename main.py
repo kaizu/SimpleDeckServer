@@ -60,6 +60,27 @@ def new_consumable(item: ConsumableItem):
             raise HTTPException(e.code, e.reason)
     return True
 
+@app.delete("/remove_consumable/{item_type}")
+def remove_consumable(item_type: str):
+    try:
+        ret = consumables_manager.remove_item(item_type)
+        if ret == True:
+            return {"status": "ok"}
+        else:
+            raise HTTPException(status_code=404, detail = str(f"No item named {item_type}"))
+    except OperationError as e:
+        if e.code == 404:
+            raise HTTPException(e.code, e.reason)
+
+@app.patch("/update/")
+def update_consumable(item: ConsumableItem):
+    try:
+        consumables_manager.update_item(item.item_type, item.amount)
+    except OperationError as e:
+        if e.code == 404 or e.code == 400:
+            raise HTTPException(e.code, e.reason)
+    return True
+
 @app.patch("/refill/")
 def refill_consumable(item: ConsumableItem):
     try:

@@ -68,6 +68,20 @@ class ConsumablesManager:
         self.consumables[item_type] = {"amount": amount}
         return True
 
+    def remove_item(self, item_type: str):
+        if not item_type in self.consumables:
+            raise OperationError(404, "Item has not been registered.")
+        del self.consumables[item_type]
+        return True
+
+    def update_item(self, item_type: str, amount: int):
+        if not item_type in self.consumables:
+            raise OperationError(404, "Item has not been registered.")
+        if amount < 0:
+            raise OperationError(400, "Invalid number of amount")
+        self.consumables[item_type]["amount"] = amount
+        return True
+
     def refill_item(self, item_type: str, amount: int):
         if not item_type in self.consumables:
             raise OperationError(404, "Item has not been registered.")
